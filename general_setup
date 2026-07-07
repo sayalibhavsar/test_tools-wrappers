@@ -346,7 +346,7 @@ fi
 
 # `dumb` is usually a result of CD system
 # this can break things like passmark
-if [[ -z "$TERM" ]] || [[ "$TERM" == "dumb" ]] || [[ "$TERM" == "unknown"]]; then
+if [[ -z "$TERM" ]] || [[ "$TERM" == "dumb" ]] || [[ "$TERM" == "unknown" ]]; then
 	export TERM=xterm
 fi
 set $gen_args_back
