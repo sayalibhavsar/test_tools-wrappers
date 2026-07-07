@@ -344,9 +344,9 @@ if [ $to_times_to_run -eq 0 ]; then
 	to_times_to_run=$iteration_default
 fi
 
-#`dumb` is usually a result of CD system
+# `dumb` is usually a result of CD system
 # this can break things like passmark
-if [[ -z "$TERM" ]] || [[ "$TERM" == "dumb" ]]; then
+if [[ -z "$TERM" ]] || [[ "$TERM" == "dumb" ]] || [[ "$TERM" == "unknown"]]; then
 	export TERM=xterm
 fi
 set $gen_args_back
