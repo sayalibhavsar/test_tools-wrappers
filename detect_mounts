@@ -20,16 +20,24 @@ mount | cut -d' ' -f1 > $mount_tmp
 # writing to that disk would destroy the volume group.
 #
 if command -v pvs &>/dev/null; then
-	for pv in $(pvs --noheadings -o pv_name 2>/dev/null | awk '{print $1}'); do
-		echo "$pv" >> $mount_tmp
-		pv_base=${pv#/dev/}
-		if [[ $pv_base =~ ^nvme || $pv_base =~ ^mmcblk ]]; then
-			pv_base=$(echo "$pv_base" | sed 's/p[[:digit:]]*$//')
-		else
-			pv_base=$(echo "$pv_base" | sed 's/[[:digit:]]*$//')
-		fi
-		echo "/dev/$pv_base" >> $mount_tmp
-	done
+	pv_output=$(pvs --noheadings -o pv_name 2>&1)
+	if [ $? -ne 0 ]; then
+		echo "Error: pvs query failed: $pv_output" >&2
+		for var in "$@"; do
+			echo "$var" >> $mount_tmp
+		done
+	else
+		for pv in $(echo "$pv_output" | awk '{print $1}'); do
+			echo "$pv" >> $mount_tmp
+			pv_base=${pv#/dev/}
+			if [[ $pv_base =~ ^nvme || $pv_base =~ ^mmcblk ]]; then
+				pv_base=$(echo "$pv_base" | sed 's/p[[:digit:]]*$//')
+			else
+				pv_base=$(echo "$pv_base" | sed 's/[[:digit:]]*$//')
+			fi
+			echo "/dev/$pv_base" >> $mount_tmp
+		done
+	fi
 fi
 #
 # Now check for mounted
