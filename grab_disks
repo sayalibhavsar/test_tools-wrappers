@@ -63,9 +63,26 @@ grab_disks()
 		# Now the mounted disks
 		#
 		for i in `df --output=source |  grep /dev`
-		do 
+		do
 			echo ${i##*/} >> $USEDDSK
 		done
+
+		#
+		# Exclude disks that are LVM physical volumes.  A mounted
+		# LV shows up as /dev/mapper/vg-lv in df, which never
+		# matches a physical disk name in ALLDSK.  Resolve PVs
+		# back to their base disk so the exclusion works.
+		#
+		if command -v pvs &>/dev/null; then
+			for pv in $(pvs --noheadings -o pv_name 2>/dev/null | awk '{print $1}'); do
+				pv_base=${pv#/dev/}
+				if [[ $pv_base =~ ^nvme || $pv_base =~ ^mmcblk ]]; then
+					echo "$pv_base" | sed 's/p[[:digit:]]*$//'
+				else
+					echo "$pv_base" | sed 's/[[:digit:]]*$//'
+				fi
+			done | sort | uniq >> $USEDDSK
+		fi
 
 		grep disk ${ALLSTG} | awk '{print $1}' | sort | uniq > ${ALLDSK}
 		disks_temp=`echo $(grep -F -x -v -f ${USEDDSK} ${ALLDSK})`
