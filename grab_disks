@@ -85,6 +85,15 @@ grab_disks()
 		fi
 
 		grep disk ${ALLSTG} | awk '{print $1}' | sort | uniq > ${ALLDSK}
+		# Filter out block devices smaller than 1MB (For IBM cloud-init config drives)
+		FILTDSK=$(mktemp /tmp/filtdsk.XXXXX)
+		while read dsk; do
+			dsk_sz=$(lsblk -b -d -n -o SIZE /dev/${dsk} 2>/dev/null)
+			if [[ -n "$dsk_sz" ]] && [[ "$dsk_sz" -ge 1048576 ]]; then
+				echo "$dsk"
+			fi
+		done < ${ALLDSK} > ${FILTDSK}
+		mv ${FILTDSK} ${ALLDSK}
 		disks_temp=`echo $(grep -F -x -v -f ${USEDDSK} ${ALLDSK})`
 		echo "$disks_temp"  | awk '{ for (i=NF; i > 1; i--) printf("%s ",$i); print $1; }' > disks
 		rm -f $ALLSTG $USEDDSK $ALLDSK
