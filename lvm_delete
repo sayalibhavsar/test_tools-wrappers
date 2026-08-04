@@ -93,6 +93,7 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 
+devices=$(pvs --noheadings -o pv_name,vg_name 2>/dev/null | grep $lvm_grp | awk '{print $1}')
 umount $mount_pnt
 lvremove -f $lvm_vol/$lvm_grp
 if [[ $? -ne 0 ]]; then
@@ -102,4 +103,8 @@ vgremove -f $lvm_vol
 if [[ $? -ne 0 ]]; then
 	exit $E_GENERAL
 fi
+for dev in $devices; do
+	pvremove -f $dev
+	wipefs -a $dev
+done
 exit $E_SUCCESS
