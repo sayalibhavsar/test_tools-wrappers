@@ -23,9 +23,8 @@ if command -v pvs &>/dev/null; then
 	pv_output=$(pvs --noheadings -o pv_name 2>&1)
 	if [ $? -ne 0 ]; then
 		echo "Error: pvs query failed: $pv_output" >&2
-		for var in "$@"; do
-			echo "$var" >> $mount_tmp
-		done
+		rm $mount_tmp
+		exit $E_DEVICE_IN_USE
 	else
 		for pv in $(echo "$pv_output" | awk '{print $1}'); do
 			echo "$pv" >> $mount_tmp
