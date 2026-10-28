@@ -1,0 +1,37 @@
+#!/bin/bash
+
+source error_codes
+exec_file="./csv_to_json"
+
+source "./tests/assert.sh"
+
+# Happy path: valid CSV converts to JSON records
+assert "$exec_file" $'[\n    {\n        "a":1,\n        "b":2\n    }\n]' "a,b
+1,2"
+
+# Empty CSV should exit with E_INVAL_DATA and a human-readable message
+assert_raises "$exec_file" $E_INVAL_DATA ""
+empty_err=$($exec_file 2>&1 </dev/null)
+if [[ "$empty_err" != *"empty"* && "$empty_err" != *"comment"* ]]; then
+    echo "test: empty CSV stderr/stdout missing human-readable empty/comment message, got: $empty_err" >&2
+    exit 1
+fi
+if [[ "$empty_err" == *"Traceback"* ]]; then
+    echo "test: empty CSV still prints a traceback: $empty_err" >&2
+    exit 1
+fi
+
+# Comment-only CSV should behave the same
+assert_raises "$exec_file" $E_INVAL_DATA "# header only
+# another comment"
+comment_err=$(printf '# header only\n# another comment\n' | $exec_file 2>&1)
+if [[ "$comment_err" != *"empty"* && "$comment_err" != *"comment"* ]]; then
+    echo "test: comment-only CSV missing human-readable message, got: $comment_err" >&2
+    exit 1
+fi
+if [[ "$comment_err" == *"Traceback"* ]]; then
+    echo "test: comment-only CSV still prints a traceback: $comment_err" >&2
+    exit 1
+fi
+
+assert_end
